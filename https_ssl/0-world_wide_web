@@ -1,18 +1,27 @@
 #!/usr/bin/env bash
-# bash file for the work
+# This script checks DNS records for specified subdomains and displays their details.
 
+function check_subdomain {
+    local domain=$1
+    local subdomain=$2
+    record_type=$(dig +short "$subdomain.$domain" | awk '{print $1}')
+    destination=$(dig +short "$subdomain.$domain")
+    echo "The subdomain $subdomain is a $record_type record and points to $destination"
+}
 
-if [ $# == 2 ]; then
-    domain=$1
-    subdomain=$2
-    SUB_DOMAINS=$subdomain
-else
-    domain=$1
-    SUB_DOMAINS=("www" "lb-01" "web-01" "web-02")
+# Check if at least one argument is provided
+if [ $# -eq 0 ]; then
+    echo "Usage: $0 domain [subdomain]"
+    exit 1
 fi
 
-for sub in ${SUB_DOMAINS[@]}; do
-    record_type="$(dig "$sub.$domain" | grep -A1 'ANSWER SECTION:' | tail -1 | awk '{print $4}')"
-    destination=$(dig +short "$sub.$domain" | awk '{print $1}')
-    echo "The subdomain $sub is a $record_type record and points to $destination"
-done
+domain=$1
+if [ $# -eq 2 ]; then
+    subdomain=$2
+    check_subdomain "$domain" "$subdomain"
+else
+    subdomains=("www" "lb-01" "web-01" "web-02")
+    for sub in "${subdomains[@]}"; do
+        check_subdomain "$domain" "$sub"
+    done
+fi
