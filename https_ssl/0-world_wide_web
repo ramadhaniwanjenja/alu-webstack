@@ -4,8 +4,19 @@
 print_domain_subdomain () {
     domain=$1
     subdomain=$2
-    record_type=$(dig +short "$subdomain.$domain" | awk '{if ($0 ~ /^[0-9]/) print "A"; else if ($0 ~ /^([a-fA-F0-9:]+)$/) print "AAAA"; else if ($0 ~ /(\.|\d{1,3}\.)/) print "CNAME"; else print $4}')
-    destination=$(dig +short "$subdomain.$domain" | head -n 1)
+    result=$(dig "$subdomain.$domain" +short)
+    if [[ -z "$result" ]]; then
+        echo "The subdomain $subdomain.$domain does not exist"
+        return
+    fi
+    destination=$(echo "$result" | head -n 1)
+    if [[ "$destination" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        record_type="A"
+    elif [[ "$destination" =~ ^[a-fA-F0-9:]+$ ]]; then
+        record_type="AAAA"
+    else
+        record_type="CNAME"
+    fi
     echo "The subdomain $subdomain is a $record_type record and points to $destination"
 }
 
